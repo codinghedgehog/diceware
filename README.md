@@ -15,5 +15,5 @@ Additional options are available:
   -sep string
         Word separator character/string (default "-")
   -wordfile string
-        Path to wordlist file (1 word/line, 7776 total lines)
+        Path to wordlist file (either 1 word per line or "index word" column per line, 7776 total lines)
 ```
