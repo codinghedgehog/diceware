@@ -18,7 +18,8 @@ Additional options are available:
         Path to wordlist file (either 1 word per line or "index word" column per line, 7776 total lines)
   -suffix int
         Append a (int) random characters to phrase.  This "hybrid" mode allows using a smaller number of
-        diceware words while still achieving the same entropy by adding a short string of random characters.
+        diceware words while still achieving the same entropy by adding a short string of random
+        characters.
   -entropy
         List out estimated entropy.
 ```
