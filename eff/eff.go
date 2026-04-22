@@ -12,6 +12,10 @@ import (
   "errors"
 )
 
+// DefaultSuffixChars is the alphanumeric character set for random suffixes,
+// excluding visually ambiguous characters (0, O, 1, I, l).
+const DefaultSuffixChars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
+
 var reIndexedFileLine = regexp.MustCompile("^([1-6]{5})\\s+(.*)")
 
 // GetWords will return a list of Diceware words
@@ -48,6 +52,28 @@ func rollIndex() string{
 
   return index.String()
 
+}
+
+// GetRandomChars returns a string of n cryptographically random characters
+// drawn uniformly from the provided charset.
+func GetRandomChars(length int, charset string) (string, error) {
+  if length < 0 {
+    return "", errors.New("length must be non-negative")
+  }
+  if len(charset) == 0 {
+    return "", errors.New("charset must not be empty")
+  }
+
+  result := make([]byte, length)
+  charsetLen := big.NewInt(int64(len(charset)))
+  for i := range result {
+    n, err := rand.Int(rand.Reader, charsetLen)
+    if err != nil {
+      return "", fmt.Errorf("crypto/rand failure: %w", err)
+    }
+    result[i] = charset[n.Int64()]
+  }
+  return string(result), nil
 }
 
 // LoadWordFile loads a word list file to use in place of the default EFF word list.
