@@ -47,7 +47,7 @@ func main(){
   var passPhrase strings.Builder
   var debug,showEntropy bool
 
-  flag.IntVar(&phraseLength,"len",6,"Number of words per phrase")
+  flag.IntVar(&phraseLength,"len",6,"Number of words per phrase. Can be 0 if suffix used, to generate random string.")
   flag.IntVar(&numberOfEntries,"num",1,"Number of phrases to generate")
   flag.IntVar(&suffixLength,"suffix",0,"Number of random alphanumeric chars to append (hybrid mode)")
   flag.StringVar(&wordFile,"wordfile","","Path to wordlist file (1 word/line, 7776 total lines)")
@@ -57,8 +57,8 @@ func main(){
 
   flag.Parse()
 
-  if phraseLength < 1 {
-    fmt.Fprintln(os.Stderr, "Error: -len must be at least 1")
+  if phraseLength < 1 && suffixLength < 0 {
+    fmt.Fprintln(os.Stderr, "Error: -len must be at least 1 or suffix must be at least 1 (for pure rand char mode)")
     os.Exit(1)
   }
   if numberOfEntries < 1 {
@@ -71,10 +71,12 @@ func main(){
   }
 
   if debug{
+    fmt.Println("Number of entries:", numberOfEntries)
     fmt.Println("Phrase Length: ", phraseLength)
     fmt.Println("Wordfile: ", wordFile)
     fmt.Println("Word Separator: ", wordSeparator)
     fmt.Println("Suffix Length: ", suffixLength)
+    fmt.Println("Entropy:", showEntropy)
   }
 
   if wordFile != "" {
@@ -90,6 +92,7 @@ func main(){
   // Separators add no entropy.
   entropyBits := float64(phraseLength)*math.Log2(7776) + float64(suffixLength)*math.Log2(float64(len(eff.DefaultSuffixChars)))
 
+
   for _ = range numberOfEntries {
     wordList,err := eff.GetWords(phraseLength)
     if err != nil{
@@ -97,31 +100,44 @@ func main(){
       os.Exit(1)
     }
 
-    for i, w := range wordList {
-      if i > 0 {
-        passPhrase.WriteString(wordSeparator)
-      }
-      passPhrase.WriteString(w)
-    }
-
-    if suffixLength > 0 {
-      suffix, err := eff.GetRandomChars(suffixLength, eff.DefaultSuffixChars)
+      // If phrase length is zero, but suffixLength is given, than generate random string of suffix length.
+    if phraseLength == 0 && suffixLength > 0 {
+      randPW, err := eff.GetRandomChars(suffixLength, eff.DefaultSuffixChars)
       if err != nil {
-        fmt.Fprintln(os.Stderr,"Failed to generate random suffix.",err)
+        fmt.Fprintln(os.Stderr,"Failed to generate random char password.",err)
         os.Exit(1)
       }
-      passPhrase.WriteString(wordSeparator)
-      passPhrase.WriteString(suffix)
-    }
-
-    if showEntropy {
-      fmt.Printf("%-50s (~%.1f bits)\n", passPhrase.String(), entropyBits)
+      if showEntropy {
+        fmt.Printf("%v (~%.1f bits)\n", randPW, entropyBits)
+      } else {
+        fmt.Println(randPW)
+      }
     } else {
-      fmt.Println(passPhrase.String())
-    }
-    passPhrase.Reset()
-  }
+      for i, w := range wordList {
+        if i > 0 {
+          passPhrase.WriteString(wordSeparator)
+        }
+        passPhrase.WriteString(w)
+      }
 
+      if suffixLength > 0 {
+        suffix, err := eff.GetRandomChars(suffixLength, eff.DefaultSuffixChars)
+        if err != nil {
+          fmt.Fprintln(os.Stderr,"Failed to generate random suffix.",err)
+          os.Exit(1)
+        }
+        passPhrase.WriteString(wordSeparator)
+        passPhrase.WriteString(suffix)
+      }
+
+      if showEntropy {
+        fmt.Printf("%-50s (~%.1f bits)\n", passPhrase.String(), entropyBits)
+      } else {
+        fmt.Println(passPhrase.String())
+      }
+      passPhrase.Reset()
+    }
+  }
 }
 
 
